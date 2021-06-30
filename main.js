@@ -13,10 +13,12 @@ function createWindow () {
         icon: './icons/clock-white.png',
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
+            nodeIntegration: true,
+            contextIsolation: false,
         }
     });
 
-    mainWindow.menuBarVisible = false;
+    // mainWindow.menuBarVisible = false;
 
     // and load the index.html of the app.
     mainWindow.loadFile('index.html')
@@ -63,4 +65,4 @@ app.on('window-all-closed', function () {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
-require('./script.js');
+// require('./backend.js');
