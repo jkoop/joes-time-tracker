@@ -36,9 +36,7 @@ function refreshProjectNames(){
         console.log("File Doesn't Exist. Creating new file: " + window.projectsFilename);
 
         fs.writeFile(window.projectsFilename, '{"highest":0,"projects":[]}', (err) => {
-            if(err) {
-                console.log(err);
-            }
+            if (err) throw err;
         });
 
         window.projects = {"highest":0,"projects":[]};
@@ -58,15 +56,76 @@ function refreshProjectNames(){
     });
 
     $('#project-list').append('<img src="./icons/clock-' + nextColour() + '.png"/>');
-    $('#project-list').append('<input class="project-name" id="projectNew" project-id="new" placeholder="project name"/>');
+    $('#project-list').append('<input class="project-name" id="projectNew" project-id="new" placeholder="project name" autofocus/>');
     $('#project-list').append('<button disabled>&#x25BA;</button>');
 
     $('input.project-name').on('change', writeProjectFile);
     $('button.project-start').on('click', function(){projectStart(this);});
+
+    refreshProjectButtons();
+}
+
+function refreshProjectEvents(){
+    window.eventsFilename = './storage/events.csv';
+
+    if(fs.existsSync(window.eventsFilename)) {
+        let events = csvDecode(fs.readFileSync(window.eventsFilename, 'utf8'));
+        window.lastEvent = events[events.length - 1] ?? [];
+        console.log(events);
+    } else {
+        console.log("File Doesn't Exist. Creating new file: " + window.eventsFilename);
+
+        fs.writeFile(window.eventsFilename, '', (err) => {
+            if (err) throw err;
+        });
+
+        window.lastEvent = [];
+    }
 }
 
 function projectStart(button){
-    console.log(button);
+    stopAllProjects();
+    startProject($(button).attr('project-id'));
+    refreshProjectButtons();
+}
+
+function projectStop(button){
+    stopAllProjects();
+    refreshProjectButtons();
+}
+
+function refreshProjectButtons(){
+    refreshProjectEvents();
+
+    $('button.project-start').each(function(){
+        $(this).removeClass('active').html('&#x25BA;');
+    });
+
+    console.log(window.lastEvent.length);
+    if(window.lastEvent.length > 0 && window.lastEvent[2].length < 2){
+        $('button[project-id="' + window.lastEvent[0] + '"]').addClass('active').html('&#x25A0;').off('click').on('click', function(){projectStop(this);});
+    }
+}
+
+function startProject(projectId){
+    fs.appendFileSync(window.eventsFilename, projectId + ',' + new Date().getTime() / 1000 + ',', (err) => {
+        if (err) throw err;
+    });
+    refreshProjectEvents();
+}
+
+function stopAllProjects(){
+    if(window.lastEvent.length > 0){
+        if(window.lastEvent[2].length < 2){
+            fs.appendFileSync(window.eventsFilename, new Date().getTime() / 1000 + "\n", (err) => {
+                if (err) throw err;
+            });
+            console.log('Saved!');
+            refreshProjectEvents();
+        }
+    }
+
+    $('button.project-start').off('click').on('click', function(){projectStart(this);});
 }
 
 function writeProjectFile(){
@@ -115,11 +174,21 @@ function updateProjectNameInArray(array, projectId, name){
 }
 
 function csvDecode(string){
-    a = string.split("\n");
+    if(string.trim().length > 0){
+        a = string.split("\n");
+    }else{
+        return [];
+    }
+
+    let c = [];
+
     a.forEach(function(b,i){
-        a[i] = b.split(',');
+        if(b.trim().length > 0){
+            c.push(b.split(','));
+        }
     })
-    return a;
+
+    return c;
 }
 
 function nextColour(){
