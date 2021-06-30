@@ -1,0 +1,26 @@
+body {
+    font-family: sans-serif;
+}
+
+img {
+    width: 24px;
+}
+
+hr {
+    border: 0;
+    border-top: 1px solid #444;
+}
+
+button:not(:disabled) {
+    cursor: pointer;
+}
+
+button.active {
+    border-style: inset;
+}
+
+#project-list {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-gap: 4px;
+}
