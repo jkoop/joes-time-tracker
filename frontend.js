@@ -53,8 +53,8 @@ function refreshProjectNames(){
         window.usedColours.push(a.colour);
 
         $('#project-list').append('<img src="./icons/clock-' + a.colour + '.png"/>');
-        $('#project-list').append('<input class="project-name" id="project' + a.id + '" project-id="' + a.id + '" placeholder="project name" value="' + a.name + '"/>');
-        $('#project-list').append('<button>&#x25BA;</button>'); //disabled //&#x25A0;
+        $('#project-list').append('<input class="project-name" project-id="' + a.id + '" placeholder="project name" value="' + a.name + '"/>');
+        $('#project-list').append('<button class="project-start" project-id="' + a.id + '">&#x25BA;</button>'); //disabled //&#x25A0;
     });
 
     $('#project-list').append('<img src="./icons/clock-' + nextColour() + '.png"/>');
@@ -62,6 +62,11 @@ function refreshProjectNames(){
     $('#project-list').append('<button disabled>&#x25BA;</button>');
 
     $('input.project-name').on('change', writeProjectFile);
+    $('button.project-start').on('click', function(){projectStart(this);});
+}
+
+function projectStart(button){
+    console.log(button);
 }
 
 function writeProjectFile(){
@@ -114,17 +119,6 @@ function csvDecode(string){
     a.forEach(function(b,i){
         a[i] = b.split(',');
     })
-    return a;
-}
-
-function csvEncode(array){
-    a = [];
-    array.forEach(function(b,i){
-        if(typeof b == 'array'){
-            a.push(b.join(','));
-        }
-    })
-    a = a.join("\n");
     return a;
 }
 
