@@ -50,10 +50,10 @@ function refreshProjectNames(){
     window.projects.projects.forEach(function(a,i){
         if(a.length < 2) return; // continue
 
-        window.usedColours.push(a[1]);
+        window.usedColours.push(a.colour);
 
-        $('#project-list').append('<img src="./icons/clock-' + a[1] + '.png"/>');
-        $('#project-list').append('<input class="project-name" id="project' + a[0] + '" project-id="' + a[0] + '" placeholder="project name" value="' + a[2] + '"/>');
+        $('#project-list').append('<img src="./icons/clock-' + a.colour + '.png"/>');
+        $('#project-list').append('<input class="project-name" id="project' + a.id + '" project-id="' + a.id + '" placeholder="project name" value="' + a.name + '"/>');
         $('#project-list').append('<button>&#x25BA;</button>'); //disabled //&#x25A0;
     });
 
@@ -80,7 +80,7 @@ function writeProjectFile(){
 function updateProjectNameInArray(array, projectId, name){
     if(name.trim() == ''){
         for(i in array){
-            if(array[i][0] == projectId){
+            if(array[i].id == projectId){
                 array.splice(i, 1);
                 break;
             }
@@ -92,15 +92,15 @@ function updateProjectNameInArray(array, projectId, name){
     if(projectId == 'new'){
         window.projects.highest++;
 
-        array.push([
-            window.projects.highest,
-            nextColour(),
-            name,
-        ]);
+        array.push({
+            id: window.projects.highest,
+            colour: nextColour(),
+            name: name,
+        });
     }else{
         for(i in array){
-            if(array[i][0] == projectId){
-                array[i][2] = name;
+            if(array[i].id == projectId){
+                array[i].name = name;
                 break;
             }
         }
