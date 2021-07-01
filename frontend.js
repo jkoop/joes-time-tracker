@@ -70,8 +70,8 @@ function refreshProjectEvents(){
 
     if(fs.existsSync(window.eventsFilename)) {
         let events = csvDecode(fs.readFileSync(window.eventsFilename, 'utf8'));
-        window.lastEvent = events[events.length - 1] ?? [];
         console.log(events);
+        window.lastEvent = events[events.length - 1] ?? [];
     } else {
         console.log("File Doesn't Exist. Creating new file: " + window.eventsFilename);
 
@@ -111,18 +111,14 @@ function startProject(projectId){
     fs.appendFileSync(window.eventsFilename, projectId + ',' + new Date().getTime() / 1000 + ',', (err) => {
         if (err) throw err;
     });
-    refreshProjectEvents();
 }
 
 function stopAllProjects(){
-    if(window.lastEvent.length > 0){
-        if(window.lastEvent[2].length < 2){
-            fs.appendFileSync(window.eventsFilename, new Date().getTime() / 1000 + "\n", (err) => {
-                if (err) throw err;
-            });
-            console.log('Saved!');
-            refreshProjectEvents();
-        }
+    if(window.lastEvent.length > 0 && window.lastEvent[2].length < 2){
+        fs.appendFileSync(window.eventsFilename, new Date().getTime() / 1000 + "\n", (err) => {
+            if (err) throw err;
+        });
+        console.log('Saved!');
     }
 
     $('button.project-start').off('click').on('click', function(){projectStart(this);});
@@ -174,11 +170,16 @@ function updateProjectNameInArray(array, projectId, name){
 }
 
 function csvDecode(string){
+    console.log(string);
+
     if(string.trim().length > 0){
         a = string.split("\n");
+        a.splice(2, a.length - 4);
     }else{
         return [];
     }
+
+    console.log(a);
 
     let c = [];
 
