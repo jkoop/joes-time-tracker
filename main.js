@@ -7,7 +7,7 @@ function createWindow () {
     const mainWindow = new BrowserWindow({
         width: 300,
         minWidth: 300,
-        height: 300,
+        height: JSON.parse(require('fs').readFileSync('./storage/projects.json', 'utf8')).projects.length * 28 + 100,
         minHeight: 300,
         title: "Joe's Time Tracker",
         icon: './icons/clock-white.png',
