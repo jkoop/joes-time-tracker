@@ -19,8 +19,31 @@ button.active {
     border-style: inset;
 }
 
-#project-list {
+#page-projects,
+#page-reports {
     display: grid;
     grid-template-columns: auto 1fr auto;
     grid-gap: 4px;
+}
+
+#page-reports {
+    display: none;
+    grid-template-columns: auto auto auto auto auto auto auto auto;
+}
+
+span.centered,
+span.th {
+    text-align: center;
+}
+
+span.th {
+    font-weight: bold;
+}
+
+#page-reports span {
+    font-size: small;
+    margin-block: auto;
+    /* white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis */
 }

@@ -23,200 +23,185 @@ const colours = [
 
 let $ = require('jquery');
 let fs = require('fs');
+let sqlite3 = require('sqlite3').verbose();
+let db = new sqlite3.Database('db.sqlite');
 
-refreshProjectNames();
+db.exec(`CREATE TABLE IF NOT EXISTS project (
+    projectId INTEGER PRIMARY KEY AUTOINCREMENT,
+    colour TEXT NOT NULL,
+    name TEXT NOT NULL,
+    isTrashed INTEGER NOT NULL DEFAULT 0
+);CREATE TABLE IF NOT EXISTS event (
+    projectId INTEGER NOT NULL,
+    startTime INTEGER NOT NULL,
+    stopTime INTEGER
+)`, function(){
+    refreshProjectNames();
+});
+
+$('body > button').on('click', function(){tab(this);});
 
 function refreshProjectNames(){
-    window.projectsFilename = './storage/projects.json';
+    $('#page-projects').empty();
+    db.each('SELECT * FROM project WHERE isTrashed=0', function(err, row){
+        $('#page-projects')
+            .append('<img src="./icons/clock-' + row.colour + '.png" project-id="' + row.projectId + '"/>')
+            .append('<input class="project-name" project-id="' + row.projectId + '" placeholder="project name"/>');
+        $('#page-projects input:last').val(row.name);
+        $('#page-projects').append('<button class="project-start" project-id="' + row.projectId + '">&#x25BA;</button>');
 
-    if(fs.existsSync(window.projectsFilename)) {
-        window.projects = JSON.parse(fs.readFileSync(window.projectsFilename, 'utf8'));
-        console.log(window.projects.projects, window.projects.highest);
-    } else {
-        console.log("File Doesn't Exist. Creating new file: " + window.projectsFilename);
+        $('#page-reports')
+            .append('<img src="./icons/clock-' + row.colour + '.png" project-id="' + row.projectId + '"/>')
+            .append('<span class="project-name" project-id="' + row.projectId + '"></span>');
+        $('#page-reports span:last').text(row.name);
+        $('#page-reports')
+            .append('<span class="centered" project-id="' + row.projectId + '">167:59:59</span>')
+            .append('<span class="centered" project-id="' + row.projectId + '">167:59:59</span>')
+            .append('<span class="centered" project-id="' + row.projectId + '">119:59:59</span>')
+            .append('<span class="centered" project-id="' + row.projectId + '">23:59:59</span>')
+            .append('<span class="centered" project-id="' + row.projectId + '">23:59:59</span>')
+            .append('<span class="centered" project-id="' + row.projectId + '">23:59:59</span>');
+    }, function(rowCount){
+        addEmptyProjectToBottomOfProjectsPage();
 
-        fs.writeFile(window.projectsFilename, '{"highest":0,"projects":[]}', (err) => {
-            if (err) throw err;
-        });
+        $('#page-projects input').on('change', function(){updateProject(this);});
+        $('#page-projects button').on('click', function(){projectChangeTo(this);});
 
-        window.projects = {"highest":0,"projects":[]};
-    }
-
-    $('#project-list').empty();
-    window.projects.projects.forEach(function(a,i){
-        if(a.length < 2) return; // continue
-
-        $('#project-list').append('<img src="./icons/clock-' + a.colour + '.png" project-id="' + a.id + '"/>');
-        $('#project-list').append('<input class="project-name" project-id="' + a.id + '" placeholder="project name" value="' + a.name + '"/>');
-        $('#project-list').append('<button class="project-start" project-id="' + a.id + '">&#x25BA;</button>'); //disabled //&#x25A0;
+        refreshProjectButtons();
     });
-
-    refreshUsedColours();
-
-    $('#project-list').append('<img src="./icons/clock-' + nextColour() + '.png" project-id="new"/>');
-    $('#project-list').append('<input class="project-name" project-id="new" placeholder="project name" autofocus/>');
-    $('#project-list').append('<button project-id="new" disabled>&#x25BA;</button>');
-
-    $('input.project-name').on('change', function(){writeProjectFile(this);});
-    $('button.project-start').on('click', function(){projectStart(this);});
-
-    refreshProjectButtons();
 }
 
-function refreshProjectEvents(){
-    window.eventsFilename = './storage/events.csv';
+function addEmptyProjectToBottomOfProjectsPage(){
+    let usedColours = [];
 
-    if(fs.existsSync(window.eventsFilename)) {
-        let events = csvDecode(fs.readFileSync(window.eventsFilename, 'utf8'));
-        console.log(events);
-        window.lastEvent = events[events.length - 1] ?? [];
-    } else {
-        console.log("File Doesn't Exist. Creating new file: " + window.eventsFilename);
+    db.each('SELECT * FROM project WHERE isTrashed=0', function(err, row){
+        usedColours.push(row.colour);
+    }, function(err, rowCount){
+        let nextColour = 'black';
 
-        fs.writeFile(window.eventsFilename, '', (err) => {
-            if (err) throw err;
-        });
+        for(i in colours){
+            if(!usedColours.includes(colours[i])){
+                nextColour = colours[i];
+                break;
+            }
+        }
 
-        window.lastEvent = [];
-    }
+        $('#page-projects').append('<img src="./icons/clock-' + nextColour + '.png" project-id="new"/>');
+        $('#page-projects').append('<input class="project-name" project-id="new" placeholder="project name" autofocus/>');
+        $('#page-projects').append('<button project-id="new" disabled>&#x25BA;</button>');
+
+        $('#page-projects input[project-id="new"]').off('change').on('change', function(){updateProject(this);});
+    });
 }
 
-function projectStart(button){
-    stopAllProjects();
-    startProject($(button).attr('project-id'));
-    refreshProjectButtons();
-}
+function projectChangeTo(button = null){
+    console.log('projectChangeTo()', button);
 
-function projectStop(button){
-    stopAllProjects();
-    refreshProjectButtons();
+    db.run('UPDATE event SET stopTime=$stopTime WHERE stopTime IS NULL', {
+        $stopTime: (new Date).getTime(),
+    }, function(err){
+        if(err == null){
+            if(button == null){
+                refreshProjectButtons();
+            }else{
+                db.run(`INSERT INTO event (projectId, startTime) VALUES ($projectId, $startTime)`, {
+                    $startTime: (new Date).getTime(),
+                    $projectId: $(button).attr('project-id'),
+                }, function(err){
+                    if(err == null){
+                        refreshProjectButtons();
+                    }else{
+                        console.error(err);
+                    }
+                });
+            }
+        }else{
+            console.error(err);
+        }
+    });
 }
 
 function refreshProjectButtons(){
-    refreshProjectEvents();
-
-    $('button.project-start').each(function(){
+    $('#page-projects button').each(function(){
         $(this).removeClass('active').html('&#x25BA;');
     });
 
-    console.log(window.lastEvent.length);
-    if(window.lastEvent.length > 0 && window.lastEvent[2].length < 2){
-        $('button[project-id="' + window.lastEvent[0] + '"]').addClass('active').html('&#x25A0;').off('click').on('click', function(){projectStop(this);});
-    }
-}
-
-function startProject(projectId){
-    fs.appendFileSync(window.eventsFilename, projectId + ',' + new Date().getTime() / 1000 + ',', (err) => {
-        if (err) throw err;
-    });
-}
-
-function stopAllProjects(){
-    if(window.lastEvent.length > 0 && window.lastEvent[2].length < 2){
-        fs.appendFileSync(window.eventsFilename, new Date().getTime() / 1000 + "\n", (err) => {
-            if (err) throw err;
-        });
-        console.log('Saved!');
-    }
-
-    $('button.project-start').off('click').on('click', function(){projectStart(this);});
-}
-
-function writeProjectFile(input){
-    let projectId = $(input).attr('project-id');
-    let name = $(input).val();
-
-    window.projects.projects = updateProjectNameInArray(window.projects.projects, projectId, name);
-
-    fs.writeFileSync(window.projectsFilename, JSON.stringify(window.projects));
-
-    //refreshProjectNames();
-}
-
-function refreshUsedColours(){
-    window.usedColours = [];
-    window.projects.projects.forEach(function(a,i){
-        if(a.length < 2) return; // continue
-        window.usedColours.push(a.colour);
-    });
-}
-
-function updateProjectNameInArray(array, projectId, name){
-    if(name.trim() == ''){
-        for(i in array){
-            if(array[i].id == projectId){
-                array.splice(i, 1);
-
-                refreshUsedColours();
-
-                $('#project-list *[project-id="' + projectId + '"]').remove();
-                $('#project-list img[project-id="new"]').attr('src', './icons/clock-' + nextColour() + '.png');
-                break;
-            }
-        }
-
-        return array;
-    }
-
-    if(projectId == 'new'){
-        window.projects.highest++;
-
-        array.push({
-            id: window.projects.highest,
-            colour: nextColour(),
-            name: name,
-        });
-
-        refreshUsedColours();
-
-        $('#project-list *[project-id="new"]').attr('disabled', false);
-        $('#project-list *[project-id="new"]').attr('project-id', window.projects.highest);
-
-        $('#project-list').append('<img src="./icons/clock-' + nextColour() + '.png" project-id="new"/>');
-        $('#project-list').append('<input class="project-name" project-id="new" placeholder="project name" autofocus/>');
-        $('#project-list').append('<button project-id="new" disabled>&#x25BA;</button>');
-
-        $('input.project-name').off('change').on('change', function(){writeProjectFile(this);});
-        $('button.project-start').off('click').on('click', function(){projectStart(this);});
-    }else{
-        for(i in array){
-            if(array[i].id == projectId){
-                array[i].name = name;
-                break;
-            }
-        }
-    }
-
-    return array;
-}
-
-function csvDecode(string){
-    if(string.trim().length > 0){
-        a = string.split("\n");
-        a.splice(2, a.length - 4);
-    }else{
-        return [];
-    }
-
-    let c = [];
-
-    a.forEach(function(b,i){
-        if(b.trim().length > 0){
-            c.push(b.split(','));
+    db.get('SELECT projectId FROM event WHERE stopTime IS NULL', function(err, row){
+        if(typeof row != 'undefined'){
+            $('#page-projects button[project-id=' + row.projectId + ']').addClass('active').html('&#x25A0;').off('click').on('click', function(){projectChangeTo();});
         }
     })
-
-    return c;
 }
 
-function nextColour(){
-    let colour='black';
+function updateProject(input){
+    console.log(input);
 
-    for(i in colours){
-        if(!window.usedColours.includes(colours[i])){
-            return colours[i];
+    let projectId = $(input).attr('project-id');
+    let name = $(input).val().trim();
+
+    if(projectId == 'new'){
+        if(name != ''){
+            let usedColours = [];
+
+            db.each('SELECT * FROM project WHERE isTrashed=0', function(err, row){
+                usedColours.push(row.colour);
+            }, function(err, rowCount){
+                let nextColour = 'black';
+
+                for(i in colours){
+                    if(!usedColours.includes(colours[i])){
+                        nextColour = colours[i];
+                        break;
+                    }
+                }
+
+                db.run('INSERT INTO project (projectId, colour, name) VALUES ($projectId, $colour, $name)', {
+                    $colour: nextColour,
+                    $name: name,
+                }, function(err){
+                    if(err == null){
+                        db.get('SELECT * FROM project WHERE isTrashed=0 ORDER BY projectId DESC LIMIT 1', function(err, row){
+                            $('#page-projects *[project-id="new"]')
+                                .attr('disabled', false)
+                                .attr('project-id', row.projectId);
+                            addEmptyProjectToBottomOfProjectsPage();
+                        });
+                    }else{
+                        console.error(err);
+                    }
+                });
+            });
+        }
+    }else{
+        if(name == ''){
+            db.run('UPDATE project SET isTrashed=1 WHERE projectId=$projectId', {
+                $projectId: projectId,
+            }, function(err){
+                if(err == null){
+                    $('#page-projects *[project-id='+projectId+']').remove();
+                }else{
+                    console.error(err);
+                }
+            });
+        }else{
+            db.run('UPDATE project SET name=$name WHERE projectId=$projectId', {
+                $projectId: projectId,
+                $name: name,
+            }, function(err){
+                if(err != null){
+                    console.error(err);
+                }
+            });
         }
     }
+}
 
-    return colour;
+function tab(name){
+    name = $(name).attr('name');
+
+    $('body > button').removeClass('active');
+    $('#tab-' + name).addClass('active');
+
+    $('body > div').hide();
+    $('#page-' + name).css('display', 'grid');
 }

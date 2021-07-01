@@ -1,13 +1,15 @@
 // Modules to control application life and create native browser window
-const {app, BrowserWindow, Tray, Menu} = require('electron')
+const {app, ipcMain, BrowserWindow, Tray, Menu} = require('electron')
 const path = require('path')
+const sqlite3 = require('sqlite3').verbose();
+const db = new sqlite3.Database('db.sqlite');
 
-function createWindow () {
+function createWindow (projectCount) {
     // Create the browser window.
     const mainWindow = new BrowserWindow({
         width: 300,
         minWidth: 300,
-        height: JSON.parse(require('fs').readFileSync('./storage/projects.json', 'utf8')).projects.length * 28 + 100,
+        height: projectCount * 28 + 100,
         minHeight: 300,
         title: "Joe's Time Tracker",
         icon: './icons/clock-white.png',
@@ -16,6 +18,10 @@ function createWindow () {
             nodeIntegration: true,
             contextIsolation: false,
         }
+    });
+
+    ipcMain.on('setMinimumSize', (event, arg) => {
+        mainWindow.setMinimumSize(arg.width, arg.height);
     });
 
     mainWindow.menuBarVisible = false;
@@ -31,23 +37,25 @@ function createWindow () {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
-        tray = new Tray(path.join(__dirname, './icons/clock-white.png'));
+    // tray = new Tray(path.join(__dirname, './icons/clock-white.png'));
 
-        tray.setContextMenu(Menu.buildFromTemplate([
-            {
-                label: 'Show App', click: function () {
-                    window.show();
-                }
-            },
-            {
-                label: 'Quit', click: function () {
-                    isQuiting = true;
-                    app.quit();
-                }
-            }
-        ]));
+    // tray.setContextMenu(Menu.buildFromTemplate([
+    //     {
+    //         label: 'Show App', click: function () {
+    //             window.show();
+    //         }
+    //     },
+    //     {
+    //         label: 'Quit', click: function () {
+    //             isQuiting = true;
+    //             app.quit();
+    //         }
+    //     }
+    // ]));
 
-    createWindow()
+    db.all('SELECT count(projectId) AS count FROM project WHERE isTrashed=0', function(err, row){
+        createWindow(row.count);
+    });
 
     app.on('activate', function () {
         // On macOS it's common to re-create a window in the app when the
