@@ -53,7 +53,8 @@ app.whenReady().then(() => {
     //     }
     // ]));
 
-    db.all('SELECT count(projectId) AS count FROM project WHERE isTrashed=0', function(err, row){
+    db.get('SELECT count(projectId) AS count FROM project WHERE isTrashed=0', function(err, row){
+        db.close();
         createWindow(row.count);
     });
 
