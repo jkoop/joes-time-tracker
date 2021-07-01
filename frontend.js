@@ -42,24 +42,22 @@ function refreshProjectNames(){
         window.projects = {"highest":0,"projects":[]};
     }
 
-    window.usedColours = [];
-
     $('#project-list').empty();
     window.projects.projects.forEach(function(a,i){
         if(a.length < 2) return; // continue
 
-        window.usedColours.push(a.colour);
-
-        $('#project-list').append('<img src="./icons/clock-' + a.colour + '.png"/>');
+        $('#project-list').append('<img src="./icons/clock-' + a.colour + '.png" project-id="' + a.id + '"/>');
         $('#project-list').append('<input class="project-name" project-id="' + a.id + '" placeholder="project name" value="' + a.name + '"/>');
         $('#project-list').append('<button class="project-start" project-id="' + a.id + '">&#x25BA;</button>'); //disabled //&#x25A0;
     });
 
-    $('#project-list').append('<img src="./icons/clock-' + nextColour() + '.png"/>');
-    $('#project-list').append('<input class="project-name" id="projectNew" project-id="new" placeholder="project name" autofocus/>');
-    $('#project-list').append('<button disabled>&#x25BA;</button>');
+    refreshUsedColours();
 
-    $('input.project-name').on('change', writeProjectFile);
+    $('#project-list').append('<img src="./icons/clock-' + nextColour() + '.png" project-id="new"/>');
+    $('#project-list').append('<input class="project-name" project-id="new" placeholder="project name" autofocus/>');
+    $('#project-list').append('<button project-id="new" disabled>&#x25BA;</button>');
+
+    $('input.project-name').on('change', function(){writeProjectFile(this);});
     $('button.project-start').on('click', function(){projectStart(this);});
 
     refreshProjectButtons();
@@ -124,17 +122,23 @@ function stopAllProjects(){
     $('button.project-start').off('click').on('click', function(){projectStart(this);});
 }
 
-function writeProjectFile(){
-    $('#project-list input').each(function(){
-        let projectId = $(this).attr('project-id');
-        let name = $(this).val();
+function writeProjectFile(input){
+    let projectId = $(input).attr('project-id');
+    let name = $(input).val();
 
-        window.projects.projects = updateProjectNameInArray(window.projects.projects, projectId, name);
-    });
+    window.projects.projects = updateProjectNameInArray(window.projects.projects, projectId, name);
 
     fs.writeFileSync(window.projectsFilename, JSON.stringify(window.projects));
 
-    refreshProjectNames();
+    //refreshProjectNames();
+}
+
+function refreshUsedColours(){
+    window.usedColours = [];
+    window.projects.projects.forEach(function(a,i){
+        if(a.length < 2) return; // continue
+        window.usedColours.push(a.colour);
+    });
 }
 
 function updateProjectNameInArray(array, projectId, name){
@@ -142,6 +146,11 @@ function updateProjectNameInArray(array, projectId, name){
         for(i in array){
             if(array[i].id == projectId){
                 array.splice(i, 1);
+
+                refreshUsedColours();
+
+                $('#project-list *[project-id="' + projectId + '"]').remove();
+                $('#project-list img[project-id="new"]').attr('src', './icons/clock-' + nextColour() + '.png');
                 break;
             }
         }
@@ -157,6 +166,18 @@ function updateProjectNameInArray(array, projectId, name){
             colour: nextColour(),
             name: name,
         });
+
+        refreshUsedColours();
+
+        $('#project-list *[project-id="new"]').attr('disabled', false);
+        $('#project-list *[project-id="new"]').attr('project-id', window.projects.highest);
+
+        $('#project-list').append('<img src="./icons/clock-' + nextColour() + '.png" project-id="new"/>');
+        $('#project-list').append('<input class="project-name" project-id="new" placeholder="project name" autofocus/>');
+        $('#project-list').append('<button project-id="new" disabled>&#x25BA;</button>');
+
+        $('input.project-name').off('change').on('change', function(){writeProjectFile(this);});
+        $('button.project-start').off('click').on('click', function(){projectStart(this);});
     }else{
         for(i in array){
             if(array[i].id == projectId){
@@ -170,16 +191,12 @@ function updateProjectNameInArray(array, projectId, name){
 }
 
 function csvDecode(string){
-    console.log(string);
-
     if(string.trim().length > 0){
         a = string.split("\n");
         a.splice(2, a.length - 4);
     }else{
         return [];
     }
-
-    console.log(a);
 
     let c = [];
 
