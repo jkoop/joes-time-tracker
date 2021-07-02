@@ -1,5 +1,4 @@
-# Electron https://github.com/electron/electron-quick-start https://www.electronjs.org/#get-started
-/LICENSE.md
+# various node stuff
 /node_modules/
 /package-lock.json
 /package.json
