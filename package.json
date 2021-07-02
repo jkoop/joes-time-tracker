@@ -1,0 +1,18 @@
+{
+    "name": "joes-time-tracker",
+    "version": "0.1.0-dev",
+    "description": "Modern replacement of the abandoned Tim's Time Tracker",
+    "main": "main.js",
+    "scripts": {
+        "start": "electron ."
+    },
+    "repository": "https://github.com/electron/electron-quick-start",
+    "keywords": [
+        "time-tracking",
+    ],
+    "author": "jkoop",
+    "license": "GPL-3.0",
+    "devDependencies": {
+        "electron": "^13.1.5"
+    }
+}
