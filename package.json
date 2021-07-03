@@ -1,4 +1,7 @@
 {
+    "build": {
+        "appId": "com.joekoop.joes-time-tracker"
+    },
     "name": "joes-time-tracker",
     "version": "1.0.0",
     "description": "Modern replacement of the abandoned Tim's Time Tracker",
@@ -6,12 +9,12 @@
     "scripts": {
         "start": "electron ."
     },
-    "repository": "https://github.com/electron/electron-quick-start",
+    "repository": "https://github.com/jkoop/joes-time-tracker",
     "keywords": [
         "time-tracking"
     ],
-    "author": "jkoop",
-    "license": "GPL-3.0",
+    "author": "Joe Koop (https://github.com/jkoop) (https://joekoop.com)",
+    "license": "GPL-3.0-only",
     "devDependencies": {
         "electron": "^13.1.5"
     },
