@@ -1,3 +1,6 @@
+const {ipcRenderer} = require('electron');
+const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const daysOfWeek = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const colours = [
     'red',
     'yellow',
@@ -36,12 +39,20 @@ db.exec(`CREATE TABLE IF NOT EXISTS project (
     startTime INTEGER NOT NULL,
     stopTime INTEGER
 )`, function(){
-    refreshProjectNames();
+    refreshProjectsPage();
 });
 
 $('body > button').on('click', function(){tab(this);});
 
-function refreshProjectNames(){
+function refreshProjectsPage(){
+    db.get('SELECT count(projectId) AS count FROM project WHERE isTrashed=0', function(err, row){
+        ipcRenderer.send('setMSize', {
+            width: 300,
+            height: row.count * 28 + 100,
+            minHeight: 300
+        });
+    });
+
     $('#page-projects').empty();
     db.each('SELECT * FROM project WHERE isTrashed=0', function(err, row){
         $('#page-projects')
@@ -49,18 +60,6 @@ function refreshProjectNames(){
             .append('<input class="project-name" project-id="' + row.projectId + '" placeholder="project name"/>');
         $('#page-projects input:last').val(row.name);
         $('#page-projects').append('<button class="project-start" project-id="' + row.projectId + '">&#x25BA;</button>');
-
-        $('#page-reports')
-            .append('<img src="./icons/clock-' + row.colour + '.png" project-id="' + row.projectId + '"/>')
-            .append('<span class="project-name" project-id="' + row.projectId + '"></span>');
-        $('#page-reports span:last').text(row.name);
-        $('#page-reports')
-            .append('<span class="centered" project-id="' + row.projectId + '">167:59:59</span>')
-            .append('<span class="centered" project-id="' + row.projectId + '">167:59:59</span>')
-            .append('<span class="centered" project-id="' + row.projectId + '">119:59:59</span>')
-            .append('<span class="centered" project-id="' + row.projectId + '">23:59:59</span>')
-            .append('<span class="centered" project-id="' + row.projectId + '">23:59:59</span>')
-            .append('<span class="centered" project-id="' + row.projectId + '">23:59:59</span>');
     }, function(rowCount){
         addEmptyProjectToBottomOfProjectsPage();
 
@@ -196,6 +195,92 @@ function updateProject(input){
     }
 }
 
+Number.prototype.pad = function(size) {
+    var s = String(this);
+    while (s.length < (size || 2)) {s = "0" + s;}
+    return s;
+}
+
+function refreshReportsPage(){
+    db.get('SELECT count(projectId) AS count FROM project WHERE isTrashed=0', function(err, row){
+        ipcRenderer.send('setMSize', {
+            width: 600,
+            height: row.count * 28 + 100,
+            minHeight: 300
+        });
+    });
+
+    var now = new Date();
+    var startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
+    var stopTime = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay() + 7);
+    var stoptTime = new Date(stopTime.getTime() - 1000);
+
+    console.log(startTime, stopTime);
+
+    $('#reports-range-display-from div:first').text(
+        startTime.getFullYear()+' '+
+        months[startTime.getMonth()]+' '+
+        startTime.getDate().pad(2)
+    );
+    $('#reports-range-display-from div:last').text(
+        startTime.getHours().pad(2)+':'+
+        startTime.getMinutes().pad(2)+':'+
+        startTime.getSeconds().pad(2)
+    );
+
+    $('#reports-range-display-to div:first').text(
+        stoptTime.getFullYear()+' '+
+        months[stoptTime.getMonth()]+' '+
+        stoptTime.getDate().pad(2)
+    );
+    $('#reports-range-display-to div:last').text(
+        stoptTime.getHours().pad(2)+':'+
+        stoptTime.getMinutes().pad(2)+':'+
+        stoptTime.getSeconds().pad(2)+'+1'
+    );
+
+    startTime = startTime.getTime();
+    stopTime = stopTime.getTime();
+
+    for(let i=0; i<7; i++){
+        $('#page-reports').append(
+            '<span class="th">' +
+            daysOfWeek[i] +
+            '<br/>' +
+            (new Date(startTime))
+        );
+    }
+
+    $('#page-reports').append('<span class="th">Total');
+
+    db.each(
+        'SELECT DISTINCT projectId FROM event WHERE startTime>=$startTime AND startTime<$stopTime',
+        {
+            $startTime: startTime,
+            $stopTime: stopTime,
+        },
+        function(err, row){
+            db.each('SELECT * FROM project WHERE projectId=$projectId', {
+                $projectId: row.projectId,
+            }, function(err, row){
+                $('#page-reports')
+                    .append('<img src="./icons/clock-' + row.colour + '.png" project-id="' + row.projectId + '"/>')
+                    .append('<span class="project-name" project-id="' + row.projectId + '"></span>');
+                $('#page-reports span:last').text(row.name);
+                // $('#page-reports').append('<button class="project-start" project-id="' + row.projectId + '">&#x25BA;</button>');
+            });
+        }//,
+        // function(rowCount){
+        //     addEmptyProjectToBottomOfProjectsPage();
+
+        //     $('#page-projects input').on('change', function(){updateProject(this);});
+        //     $('#page-projects button').on('click', function(){projectChangeTo(this);});
+
+        //     refreshProjectButtons();
+        // }
+    );
+}
+
 function tab(name){
     name = $(name).attr('name');
 
@@ -204,4 +289,10 @@ function tab(name){
 
     $('body > div').hide();
     $('#page-' + name).css('display', 'grid');
+
+    if(name == 'projects'){
+        refreshProjectsPage();
+    }else if(name == 'reports'){
+        refreshReportsPage();
+    }
 }

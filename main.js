@@ -18,8 +18,15 @@ function createWindow (projectCount) {
         }
     });
 
+    ipcMain.on('setSize', (event, arg) => {
+        mainWindow.setSize(arg.width, arg.height);
+    });
     ipcMain.on('setMinimumSize', (event, arg) => {
         mainWindow.setMinimumSize(arg.width, arg.height);
+    });
+    ipcMain.on('setMSize', (event, arg) => {
+        mainWindow.setMinimumSize(arg.minWidth ?? arg.width, arg.minHeight ?? arg.height);
+        mainWindow.setSize(arg.width, arg.height);
     });
 
     mainWindow.menuBarVisible = false;

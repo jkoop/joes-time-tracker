@@ -15,15 +15,18 @@
         <hr />
 
         <div id="page-projects"></div>
-        <div id="page-reports">
-            <span></span>
-            <span class="th">project</span>
-            <span class="th">week<br/>before</span>
-            <span class="th">last<br/>week</span>
-            <span class="th">since<br/>start of<br/>sunday</span>
-            <span class="th">day<br/>before</span>
-            <span class="th">ystrday</span>
-            <span class="th">today</span>
+        <div id="page-reports" class="weekTotal">
+            <div id="reports-range-display">
+                <button disabled>&#x2190; Prev</button>
+                <button disabled>&#x2191; Zoom<br>Out</button>
+                <span class="th" id="reports-range-display-from"><div></div><div></div></span>
+                <span class="th">to</span>
+                <span class="th" id="reports-range-display-to"><div></div><div></div></span>
+                <button disabled>Zoom<br/>In &#x2193;</button>
+                <button disabled>Next &#x2192;</button>
+            </div>
+            <span><!-- icon spacer --></span>
+            <span class="th">Project</span>
         </div>
 
         <script src="./frontend.js"></script>
