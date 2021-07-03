@@ -1,13 +1,13 @@
-const {app, ipcMain, BrowserWindow, Tray, Menu} = require('electron')
-const path = require('path')
-const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database('db.sqlite');
+const {app, ipcMain, BrowserWindow, Tray, Menu} = require('electron');
+const path = require('path');
+let sqlite3 = require('sqlite3').verbose();
+let db = new sqlite3.Database('db.sqlite');
 
-function createWindow (projectCount) {
+function createWindow () {
     const mainWindow = new BrowserWindow({
         width: 300,
         minWidth: 300,
-        height: projectCount * 28 + 100,
+        height: 300,
         minHeight: 300,
         title: "Joe's Time Tracker",
         icon: './icons/clock-white.png',
@@ -50,9 +50,27 @@ app.whenReady().then(() => {
     //     }
     // ]));
 
-    db.get('SELECT count(projectId) AS count FROM project WHERE isTrashed=0', function(err, row){
-        db.close();
-        createWindow((row ?? []).count);
+    db.serialize(function() { //set up the database
+        db.exec(`PRAGMA foreign_keys = ON; PRAGMA synchronous = OFF;`);
+        db.exec(`CREATE TABLE IF NOT EXISTS project (
+            projectId INTEGER PRIMARY KEY AUTOINCREMENT,
+            colour TEXT NOT NULL,
+            name TEXT NOT NULL,
+            isTrashed INTEGER NOT NULL DEFAULT 0
+        );
+        CREATE TABLE IF NOT EXISTS event (
+            projectId INTEGER NOT NULL,
+            startTime INTEGER NOT NULL,
+            stopTime INTEGER
+        );`);
+        db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS eventStart ON event(startTime);
+            CREATE UNIQUE INDEX IF NOT EXISTS eventStop ON event(stopTime);
+            CREATE INDEX IF NOT EXISTS eventProjectId ON event(projectId);
+            CREATE UNIQUE INDEX IF NOT EXISTS projectId ON project(projectId);`,
+            function(){
+                db.close();
+                createWindow();
+        });
     });
 
     app.on('activate', function () {

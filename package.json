@@ -1,6 +1,6 @@
 {
     "name": "joes-time-tracker",
-    "version": "0.1.0-dev",
+    "version": "1.0.0",
     "description": "Modern replacement of the abandoned Tim's Time Tracker",
     "main": "main.js",
     "scripts": {

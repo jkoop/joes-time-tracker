@@ -29,18 +29,7 @@ let fs = require('fs');
 let sqlite3 = require('sqlite3').verbose();
 let db = new sqlite3.Database('db.sqlite');
 
-db.exec(`CREATE TABLE IF NOT EXISTS project (
-    projectId INTEGER PRIMARY KEY AUTOINCREMENT,
-    colour TEXT NOT NULL,
-    name TEXT NOT NULL,
-    isTrashed INTEGER NOT NULL DEFAULT 0
-);CREATE TABLE IF NOT EXISTS event (
-    projectId INTEGER NOT NULL,
-    startTime INTEGER NOT NULL,
-    stopTime INTEGER
-)`, function(){
-    refreshProjectsPage();
-});
+db.exec(`PRAGMA foreign_keys = ON; PRAGMA synchronous = OFF;`, refreshProjectsPage);
 
 $('body > button').on('click', function(){tab(this);});
 
@@ -122,7 +111,7 @@ function projectChangeTo(button = null){
 
 function refreshProjectButtons(){
     $('#page-projects button').each(function(){
-        $(this).removeClass('active').html('&#x25BA;');
+        $(this).removeClass('active').html('&#x25BA;').off('click').on('click', function(){projectChangeTo(this);});
     });
 
     db.get('SELECT projectId FROM event WHERE stopTime IS NULL', function(err, row){
@@ -178,6 +167,7 @@ function updateProject(input){
             }, function(err){
                 if(err == null){
                     $('#page-projects *[project-id='+projectId+']').remove();
+                    projectChangeTo();
                 }else{
                     console.error(err);
                 }
@@ -202,20 +192,23 @@ Number.prototype.pad = function(size) {
 }
 
 function refreshReportsPage(){
-    db.get('SELECT count(projectId) AS count FROM project WHERE isTrashed=0', function(err, row){
-        ipcRenderer.send('setMSize', {
-            width: 600,
-            height: row.count * 28 + 100,
-            minHeight: 300
-        });
-    });
+    $('#page-reports').html(`
+        <div id="reports-range-display">
+            <button disabled>&#x2190; Prev</button>
+            <button disabled>&#x2191; Zoom<br>Out</button>
+            <span class="th" id="reports-range-display-from"><div></div><div></div></span>
+            <span class="th">to</span>
+            <span class="th" id="reports-range-display-to"><div></div><div></div></span>
+            <button disabled>Zoom<br/>In &#x2193;</button>
+            <button disabled>Next &#x2192;</button>
+        </div>
+        <span><!-- icon spacer --></span>
+        <span class="th left">Project</span>`);
 
     var now = new Date();
     var startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
     var stopTime = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay() + 7);
     var stoptTime = new Date(stopTime.getTime() - 1000);
-
-    console.log(startTime, stopTime);
 
     $('#reports-range-display-from div:first').text(
         startTime.getFullYear()+' '+
@@ -239,45 +232,151 @@ function refreshReportsPage(){
         stoptTime.getSeconds().pad(2)+'+1'
     );
 
-    startTime = startTime.getTime();
-    stopTime = stopTime.getTime();
-
+    let a = new Date(startTime.getTime());
     for(let i=0; i<7; i++){
         $('#page-reports').append(
             '<span class="th">' +
             daysOfWeek[i] +
             '<br/>' +
-            (new Date(startTime))
+            months[a.getMonth()]+' '+
+            a.getDate()
         );
+        a.setDate(a.getDate()+1);
     }
+
+    startTime = startTime.getTime();
+    stopTime = stopTime.getTime();
 
     $('#page-reports').append('<span class="th">Total');
 
-    db.each(
-        'SELECT DISTINCT projectId FROM event WHERE startTime>=$startTime AND startTime<$stopTime',
-        {
+    db.all(
+        'SELECT * FROM project WHERE projectId IN (SELECT DISTINCT projectId FROM event WHERE startTime>=$startTime AND startTime<$stopTime ORDER BY projectId)', {
             $startTime: startTime,
             $stopTime: stopTime,
-        },
-        function(err, row){
-            db.each('SELECT * FROM project WHERE projectId=$projectId', {
-                $projectId: row.projectId,
-            }, function(err, row){
+        }, function(err, rows){
+            ipcRenderer.send('setMSize', {
+                width: 600,
+                height: rows.length * 28 + 200,
+                minHeight: 300
+            });
+
+            rows.forEach(function(row,i){
                 $('#page-reports')
                     .append('<img src="./icons/clock-' + row.colour + '.png" project-id="' + row.projectId + '"/>')
-                    .append('<span class="project-name" project-id="' + row.projectId + '"></span>');
+                    .append('<span class="project-name left" project-id="' + row.projectId + '"></span>');
                 $('#page-reports span:last').text(row.name);
-                // $('#page-reports').append('<button class="project-start" project-id="' + row.projectId + '">&#x25BA;</button>');
+
+                for(let i=0; i<7; i++){
+                    $('#page-reports').append('<span project-id="' + row.projectId + '" column="' + i + '">');
+
+                    let startTimeL = startTime + i * (1000*60*60*24);
+                    let stopTimeL = startTimeL + 1000*60*60*24;
+
+                    db.all('SELECT startTime, stopTime FROM event WHERE projectId=$projectId AND startTime>=$startTime AND startTime<$stopTime', {
+                        $projectId: row.projectId,
+                        $startTime: startTimeL,
+                        $stopTime: stopTimeL,
+                    }, function(err, rows){
+                        let sum = 0;
+
+                        rows.forEach(function(row){
+                            let duration = (row.stopTime ?? now.getTime()) - row.startTime;
+                            sum += duration;
+                        });
+
+                        sum = Math.round(sum / 1000);
+
+                        $('#page-reports span[project-id="'+row.projectId+'"][column="'+i+'"]').text(
+                            Math.floor(sum / 3600).pad(2) + ':' +
+                            Math.floor((sum % 3600) / 60).pad(2) + ':' +
+                            (sum % 60).pad(2)
+                        );
+                    });
+                }
+
+                $('#page-reports').append('<span class="th" project-id="' + row.projectId + '" column="total">');
+
+                db.all('SELECT startTime, stopTime FROM event WHERE projectId=$projectId AND startTime>=$startTime AND startTime<$stopTime', {
+                    $projectId: row.projectId,
+                    $startTime: startTime,
+                    $stopTime: stopTime,
+                }, function(err, rows){
+                    let sum = 0;
+
+                    rows.forEach(function(row){
+                        let duration = (row.stopTime ?? now.getTime()) - row.startTime;
+                        sum += duration;
+                    });
+
+                    sum = Math.round(sum / 1000);
+
+                    $('#page-reports span[project-id="'+row.projectId+'"][column="total"]').text(
+                        Math.floor(sum / 3600).pad(2) + ':' +
+                        Math.floor((sum % 3600) / 60).pad(2) + ':' +
+                        (sum % 60).pad(2)
+                    );
+                });
+
+                if(row.isTrashed){
+                    $('#page-reports [project-id="'+row.projectId+'"]').addClass('is-trashed');
+                }
             });
-        }//,
-        // function(rowCount){
-        //     addEmptyProjectToBottomOfProjectsPage();
 
-        //     $('#page-projects input').on('change', function(){updateProject(this);});
-        //     $('#page-projects button').on('click', function(){projectChangeTo(this);});
+            $('#page-reports')
+                .append('<span class="img"></span>')
+                .append('<span class="th left" project-id="total">Total</span>');
 
-        //     refreshProjectButtons();
-        // }
+            for(let i=0; i<7; i++){
+                $('#page-reports').append('<span project-id="total"" column="' + i + '">');
+
+                let startTimeL = startTime + i * (1000*60*60*24);
+                let stopTimeL = startTimeL + 1000*60*60*24;
+
+                db.all('SELECT startTime, stopTime FROM event WHERE startTime>=$startTime AND startTime<$stopTime', {
+                    $startTime: startTimeL,
+                    $stopTime: stopTimeL,
+                }, function(err, rows){
+                    let sum = 0;
+
+                    rows.forEach(function(row){
+                        let duration = (row.stopTime ?? now.getTime()) - row.startTime;
+                        sum += duration;
+                    });
+
+                    sum = Math.round(sum / 1000);
+
+                    $('#page-reports span[project-id="total"][column="'+i+'"]').text(
+                        Math.floor(sum / 3600).pad(2) + ':' +
+                        Math.floor((sum % 3600) / 60).pad(2) + ':' +
+                        (sum % 60).pad(2)
+                    );
+                });
+            }
+
+            $('#page-reports').append('<span class="th" project-id="total" column="total">');
+
+            db.all('SELECT startTime, stopTime FROM event WHERE startTime>=$startTime AND startTime<$stopTime', {
+                $startTime: startTime,
+                $stopTime: stopTime,
+            }, function(err, rows){
+                let sum = 0;
+
+                rows.forEach(function(row){
+                    let duration = (row.stopTime ?? now.getTime()) - row.startTime;
+                    sum += duration;
+                });
+
+                sum = Math.round(sum / 1000);
+
+                $('#page-reports span[project-id="total"][column="total"]').text(
+                    Math.floor(sum / 3600).pad(2) + ':' +
+                    Math.floor((sum % 3600) / 60).pad(2) + ':' +
+                    (sum % 60).pad(2)
+                );
+            });
+
+            $('#page-reports').append('<span class="note"><b>Note</b><br/>Reports doesn\'t yet correctly handle events that occur(red) over midnight')
+        }
     );
 }
 

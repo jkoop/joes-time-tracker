@@ -2,8 +2,10 @@ body {
     font-family: sans-serif;
 }
 
-img {
+img,
+span.img {
     width: 24px;
+    height: 24px;
 }
 
 hr {
@@ -17,6 +19,10 @@ button:not(:disabled) {
 
 button.active {
     border-style: inset;
+}
+
+.left {
+    text-align: left !important;
 }
 
 #page-projects,
@@ -35,8 +41,11 @@ button.active {
     grid-template-columns: auto auto auto auto auto auto auto auto auto auto;
 }
 
-#page-reports .centered,
-#page-reports .th {
+#page-reports button {
+    opacity: 0;
+}
+
+#page-reports span {
     text-align: center;
 }
 
@@ -52,21 +61,17 @@ button.active {
     text-overflow: ellipsis */
 }
 
-#reports-range-display {
+#reports-range-display,
+#page-reports span.note {
     grid-template-columns: auto auto 1fr auto 1fr auto auto;
     grid-column-start: 1;
 }
 
-#page-reports.weekTotal #reports-range-display {
+#page-reports.weekTotal #reports-range-display,
+#page-reports span.note {
     grid-column-end: 11;
 }
 
-#page-reports.dayTotal #reports-range-display,
-#page-reports.monthTotal #reports-range-display,
-#page-reports.sixMonthTotal #reports-range-display {
-    grid-column-end: 10;
-}
-
-#page-reports.fourHourTotal #reports-range-display {
-    grid-column-end: 9;
+#page-reports .is-trashed {
+    opacity: 0.5;
 }
