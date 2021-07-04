@@ -250,13 +250,13 @@ function refreshReportsPage(){
     $('#page-reports').append('<span class="th">Total');
 
     db.all(
-        'SELECT * FROM project WHERE projectId IN (SELECT DISTINCT projectId FROM event WHERE startTime>=$startTime AND startTime<$stopTime ORDER BY projectId)', {
+        'SELECT * FROM project WHERE projectId IN (SELECT DISTINCT projectId FROM event WHERE (startTime>=$startTime AND startTime<$stopTime AND (stopTime<=$stopTime OR stopTime IS NULL)) OR (startTime<$startTime AND stopTime>$startTime) OR (startTime<$stopTime AND stopTime>$stopTime) ORDER BY projectId)', {
             $startTime: startTime,
             $stopTime: stopTime,
         }, function(err, rows){
             ipcRenderer.send('setMSize', {
                 width: 600,
-                height: rows.length * 28 + 200,
+                height: rows.length * 28 + 165,
                 minHeight: 300
             });
 
@@ -272,7 +272,7 @@ function refreshReportsPage(){
                     let startTimeL = startTime + i * (1000*60*60*24);
                     let stopTimeL = startTimeL + 1000*60*60*24;
 
-                    db.all('SELECT startTime, stopTime FROM event WHERE projectId=$projectId AND startTime>=$startTime AND startTime<$stopTime', {
+                    db.all('SELECT startTime, stopTime FROM event WHERE projectId=$projectId AND (startTime>=$startTime AND startTime<$stopTime AND (stopTime<=$stopTime OR stopTime IS NULL)) OR (startTime<$startTime AND stopTime>$startTime) OR (startTime<$stopTime AND stopTime>$stopTime)', {
                         $projectId: row.projectId,
                         $startTime: startTimeL,
                         $stopTime: stopTimeL,
@@ -280,7 +280,7 @@ function refreshReportsPage(){
                         let sum = 0;
 
                         rows.forEach(function(row){
-                            let duration = (row.stopTime ?? now.getTime()) - row.startTime;
+                            let duration = Math.min(stopTimeL, row.stopTime ?? now.getTime()) - Math.max(startTimeL, row.startTime);
                             sum += duration;
                         });
 
@@ -296,7 +296,7 @@ function refreshReportsPage(){
 
                 $('#page-reports').append('<span class="th" project-id="' + row.projectId + '" column="total">');
 
-                db.all('SELECT startTime, stopTime FROM event WHERE projectId=$projectId AND startTime>=$startTime AND startTime<$stopTime', {
+                db.all('SELECT startTime, stopTime FROM event WHERE projectId=$projectId AND (startTime>=$startTime AND startTime<$stopTime AND (stopTime<=$stopTime OR stopTime IS NULL)) OR (startTime<$startTime AND stopTime>$startTime) OR (startTime<$stopTime AND stopTime>$stopTime)', {
                     $projectId: row.projectId,
                     $startTime: startTime,
                     $stopTime: stopTime,
@@ -304,7 +304,7 @@ function refreshReportsPage(){
                     let sum = 0;
 
                     rows.forEach(function(row){
-                        let duration = (row.stopTime ?? now.getTime()) - row.startTime;
+                        let duration = Math.min(stopTime, row.stopTime ?? now.getTime()) - Math.max(startTime, row.startTime);
                         sum += duration;
                     });
 
@@ -332,14 +332,14 @@ function refreshReportsPage(){
                 let startTimeL = startTime + i * (1000*60*60*24);
                 let stopTimeL = startTimeL + 1000*60*60*24;
 
-                db.all('SELECT startTime, stopTime FROM event WHERE startTime>=$startTime AND startTime<$stopTime', {
+                db.all('SELECT startTime, stopTime FROM event WHERE (startTime>=$startTime AND startTime<$stopTime AND (stopTime<=$stopTime OR stopTime IS NULL)) OR (startTime<$startTime AND stopTime>$startTime) OR (startTime<$stopTime AND stopTime>$stopTime)', {
                     $startTime: startTimeL,
                     $stopTime: stopTimeL,
                 }, function(err, rows){
                     let sum = 0;
 
                     rows.forEach(function(row){
-                        let duration = (row.stopTime ?? now.getTime()) - row.startTime;
+                        let duration = Math.min(stopTimeL, row.stopTime ?? now.getTime()) - Math.max(startTimeL, row.startTime);
                         sum += duration;
                     });
 
@@ -355,14 +355,14 @@ function refreshReportsPage(){
 
             $('#page-reports').append('<span class="th" project-id="total" column="total">');
 
-            db.all('SELECT startTime, stopTime FROM event WHERE startTime>=$startTime AND startTime<$stopTime', {
+            db.all('SELECT startTime, stopTime FROM event WHERE (startTime>=$startTime AND startTime<$stopTime AND (stopTime<=$stopTime OR stopTime IS NULL)) OR (startTime<$startTime AND stopTime>$startTime) OR (startTime<$stopTime AND stopTime>$stopTime)', {
                 $startTime: startTime,
                 $stopTime: stopTime,
             }, function(err, rows){
                 let sum = 0;
 
                 rows.forEach(function(row){
-                    let duration = (row.stopTime ?? now.getTime()) - row.startTime;
+                    let duration = Math.min(stopTime, row.stopTime ?? now.getTime()) - Math.max(startTime, row.startTime);
                     sum += duration;
                 });
 
@@ -374,8 +374,6 @@ function refreshReportsPage(){
                     (sum % 60).pad(2)
                 );
             });
-
-            $('#page-reports').append('<span class="note"><b>Note</b><br/>Reports doesn\'t yet correctly handle events that occur(red) over midnight')
         }
     );
 }

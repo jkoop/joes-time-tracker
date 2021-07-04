@@ -21,10 +21,6 @@ button.active {
     border-style: inset;
 }
 
-.left {
-    text-align: left !important;
-}
-
 #page-projects,
 #page-reports,
 #reports-range-display {
@@ -38,7 +34,7 @@ button.active {
 
 #page-reports {
     display: none;
-    grid-template-columns: auto auto auto auto auto auto auto auto auto auto;
+    grid-template-columns: auto 1fr auto auto auto auto auto auto auto auto;
 }
 
 #page-reports button {
@@ -53,12 +49,18 @@ button.active {
     font-weight: bold;
 }
 
+#page-reports .left {
+    text-align: left !important;
+    margin-left: 0 !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis
+}
+
 #page-reports span {
     font-size: small;
     margin-block: auto;
-    /* white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis */
+    margin-inline: 3px;
 }
 
 #reports-range-display,
