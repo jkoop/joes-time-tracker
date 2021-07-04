@@ -10,6 +10,10 @@ All notable changes to this project will be documented in this file. The format 
 + Reports can zoom in to 1 day and 6 hours
 + System tray indicator icon and quick menu
 
+## [1.1.1] - 2021-07-03
+### Fixed
++ Reports now correctly handles events that haven't ended and occur over midnight
+
 ## [1.1.0] - 2021-07-03
 ### Fixed
 + Reports now correctly handles events that occur over midnight
@@ -18,6 +22,7 @@ All notable changes to this project will be documented in this file. The format 
 ### Added
 + Minimum viable product
 
-[Unreleased]: https://github.com/jkoop/joes-time-tracker/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/jkoop/joes-time-tracker/compare/v1.1.1...HEAD
+[1.1.0]: https://github.com/jkoop/joes-time-tracker/releases/tag/v1.1.1
 [1.1.0]: https://github.com/jkoop/joes-time-tracker/releases/tag/v1.1.0
 [1.0.0]: https://github.com/jkoop/joes-time-tracker/releases/tag/v1.0.0
