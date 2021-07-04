@@ -10,7 +10,7 @@ All notable changes to this project will be documented in this file. The format 
 + Reports can zoom in to 1 day and 6 hours
 + System tray indicator icon and quick menu
 
-## [1.1.1] - 2021-07-03
+## [1.1.1] - 2021-07-04
 ### Fixed
 + Reports now correctly handles events that haven't ended and occur over midnight
 
