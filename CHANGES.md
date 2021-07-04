@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
++ Undelete project
++ Reports can page to other weeks
++ Reports can zoom out to a month and 6 months and 1 year
++ Reports can zoom in to 1 day and 6 hours
++ System tray indicator icon and quick menu
 
 ## [1.1.0] - 2021-07-03
 ### Fixed
