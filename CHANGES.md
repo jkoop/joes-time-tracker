@@ -23,6 +23,6 @@ All notable changes to this project will be documented in this file. The format 
 + Minimum viable product
 
 [Unreleased]: https://github.com/jkoop/joes-time-tracker/compare/v1.1.1...HEAD
-[1.1.0]: https://github.com/jkoop/joes-time-tracker/releases/tag/v1.1.1
+[1.1.1]: https://github.com/jkoop/joes-time-tracker/releases/tag/v1.1.1
 [1.1.0]: https://github.com/jkoop/joes-time-tracker/releases/tag/v1.1.0
 [1.0.0]: https://github.com/jkoop/joes-time-tracker/releases/tag/v1.0.0
