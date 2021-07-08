@@ -13,7 +13,7 @@ All notable changes to this project will be documented in this file. The format 
 ### Fixed
 + Reports correctly handles events that haven't ended and occur over midnight
 
-## [1.1.1] - 2021-07-04 (Yanked)
+## 1.1.1 - 2021-07-04 (Yanked)
 ### Yanked
 + There's a typo that breaks Reports. Doing what I thought would fix it makes Reports print negative numbers
 
