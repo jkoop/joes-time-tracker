@@ -250,7 +250,7 @@ function refreshReportsPage(){
     $('#page-reports').append('<span class="th">Total');
 
     db.all(
-        'SELECT * FROM project WHERE projectId IN (SELECT DISTINCT projectId FROM event WHERE (startTime>=$startTime AND startTime<$stopTime AND (stopTime<=$stopTime OR stopTime IS NULL)) OR (startTime<$startTime AND (stopTime>$startTime OR stopTime IS NULL)) OR (startTime<$stopTime AND (stopTime>$stopTime OR stopTime IS NULL)) ORDER BY projectId)', {
+        'SELECT * FROM project WHERE projectId IN (SELECT DISTINCT projectId FROM event WHERE (startTime>=$startTime AND startTime<$stopTime AND (stopTime<=$stopTime OR stopTime IS NULL)) OR (startTime<$startTime AND stopTime>$startTime) OR (startTime<$stopTime AND stopTime>$stopTime) ORDER BY projectId)', {
             $startTime: startTime,
             $stopTime: stopTime,
         }, function(err, rows){
@@ -272,7 +272,7 @@ function refreshReportsPage(){
                     let startTimeL = startTime + i * (1000*60*60*24);
                     let stopTimeL = startTimeL + 1000*60*60*24;
 
-                    db.all('SELECT startTime, stopTime FROM event WHERE projectId=$projectId AND (startTime>=$startTime AND startTime<$stopTime AND (stopTime<=$stopTime OR stopTime IS NULL)) OR (startTime<$startTime AND (stopTime>$startTime OR stopTime IS NULL)) OR (startTime<$stopTime AND (stopTime>$stopTime OR stopTime IS NULL)', {
+                    db.all('SELECT startTime, stopTime FROM event WHERE projectId=$projectId AND (startTime>=$startTime AND startTime<$stopTime AND (stopTime<=$stopTime OR stopTime IS NULL)) OR (startTime<$startTime AND stopTime>$startTime) OR (startTime<$stopTime AND stopTime>$stopTime)', {
                         $projectId: row.projectId,
                         $startTime: startTimeL,
                         $stopTime: stopTimeL,
@@ -296,7 +296,7 @@ function refreshReportsPage(){
 
                 $('#page-reports').append('<span class="th" project-id="' + row.projectId + '" column="total">');
 
-                db.all('SELECT startTime, stopTime FROM event WHERE projectId=$projectId AND (startTime>=$startTime AND startTime<$stopTime AND (stopTime<=$stopTime OR stopTime IS NULL)) OR (startTime<$startTime AND (stopTime>$startTime OR stopTime IS NULL)) OR (startTime<$stopTime AND (stopTime>$stopTime OR stopTime IS NULL)', {
+                db.all('SELECT startTime, stopTime FROM event WHERE projectId=$projectId AND (startTime>=$startTime AND startTime<$stopTime AND (stopTime<=$stopTime OR stopTime IS NULL)) OR (startTime<$startTime AND stopTime>$startTime) OR (startTime<$stopTime AND stopTime>$stopTime)', {
                     $projectId: row.projectId,
                     $startTime: startTime,
                     $stopTime: stopTime,
@@ -332,7 +332,7 @@ function refreshReportsPage(){
                 let startTimeL = startTime + i * (1000*60*60*24);
                 let stopTimeL = startTimeL + 1000*60*60*24;
 
-                db.all('SELECT startTime, stopTime FROM event WHERE (startTime>=$startTime AND startTime<$stopTime AND (stopTime<=$stopTime OR stopTime IS NULL)) OR (startTime<$startTime AND (stopTime>$startTime OR stopTime IS NULL)) OR (startTime<$stopTime AND (stopTime>$stopTime OR stopTime IS NULL)', {
+                db.all('SELECT startTime, stopTime FROM event WHERE (startTime>=$startTime AND startTime<$stopTime AND (stopTime<=$stopTime OR stopTime IS NULL)) OR (startTime<$startTime AND stopTime>$startTime) OR (startTime<$stopTime AND stopTime>$stopTime)', {
                     $startTime: startTimeL,
                     $stopTime: stopTimeL,
                 }, function(err, rows){
@@ -355,7 +355,7 @@ function refreshReportsPage(){
 
             $('#page-reports').append('<span class="th" project-id="total" column="total">');
 
-            db.all('SELECT startTime, stopTime FROM event WHERE (startTime>=$startTime AND startTime<$stopTime AND (stopTime<=$stopTime OR stopTime IS NULL)) OR (startTime<$startTime AND (stopTime>$startTime OR stopTime IS NULL)) OR (startTime<$stopTime AND (stopTime>$stopTime OR stopTime IS NULL)', {
+            db.all('SELECT startTime, stopTime FROM event WHERE (startTime>=$startTime AND startTime<$stopTime AND (stopTime<=$stopTime OR stopTime IS NULL)) OR (startTime<$startTime AND stopTime>$startTime) OR (startTime<$stopTime AND stopTime>$stopTime)', {
                 $startTime: startTime,
                 $stopTime: stopTime,
             }, function(err, rows){
